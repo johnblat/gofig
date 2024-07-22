@@ -18,10 +18,10 @@ var ErrErrorsDoNotMatch = func(expected, actual error) error {
 }
 
 /*
-TestInit is just a general example test to show usage of the library.
+Test_Init is just a general example test to show usage of the library.
 Does a few checks in one
 */
-func TestInit(t *testing.T) {
+func Test_Init(t *testing.T) {
 	os.Setenv("FOO", "true")
 	os.Setenv("BAR", "10")
 	os.Setenv("BAZ", "hello")
@@ -79,7 +79,7 @@ func TestInit(t *testing.T) {
 
 }
 
-func TestInitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
+func Test_InitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 	os.Setenv("FOO", "10")
 
 	var fooId gofig.Id
@@ -101,7 +101,7 @@ func TestInitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 
 }
 
-func TestInitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
+func Test_InitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -123,7 +123,7 @@ func TestInitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
+func Test_InitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -145,7 +145,7 @@ func TestInitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
+func Test_InitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -167,7 +167,7 @@ func TestInitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
+func Test_InitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -189,7 +189,7 @@ func TestInitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
+func Test_InitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
 	val := "not an int"
 	os.Setenv("FOO", val)
 
@@ -220,7 +220,7 @@ func TestInitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
+func Test_InitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
 	val := "not a float"
 	os.Setenv("FOO", val)
 
@@ -251,7 +251,7 @@ func TestInitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
 	}
 }
 
-func TestInitFailsWhenNoInitOptsPassed(t *testing.T) {
+func Test_InitFailsWhenNoInitOptsPassed(t *testing.T) {
 	_, errActual := gofig.Init([]gofig.InitOpt{})
 
 	errExpected := gofig.ErrNoInputOpts
@@ -263,7 +263,7 @@ func TestInitFailsWhenNoInitOptsPassed(t *testing.T) {
 /*
 Create a bunch of configuration Ids by calling Init with a bunch of correctly defined InitOpts with mixed types. Then test to see if all the values equal expected results.
 */
-func TestGetABunchOfCallsSuccess(t *testing.T) {
+func Test_GetABunchOfCallsSuccess(t *testing.T) {
 	const n = 30
 	var ids [n]gofig.Id
 	var opts [n]gofig.InitOpt
