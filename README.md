@@ -1,7 +1,8 @@
 # gofig
 
 ## What's the Deal With gofig?
-**gofig** is a **configuration library** for **config-heavy apps**. This was created because:
+
+**gofig** is a **configuration library** for **config-heavy apps** written by lazy developers. It was created because:
 - As projects grow, configuration options grow and change. **gofig** makes it really hard to **not** document configuration options accurately and comprehensively. 
 - **gofig** tries to prevent configuration related bugs by adding safeguards to fail early on config initialization.
 - Configuration options can be scattered around the codebase. **gofig** centralizes all configuration options in one place. This makes it easy to see all the configuration options at a glance.
@@ -9,104 +10,102 @@
 In **gofig**, the code *is* the documentation.
 
 ## Design Philosophies
-1. It should be easy to use. It basically only has two API functions: `Init` and the `Get`-family of functions.
+1. It should be easy to use. It basically only has two API functions: `Init` and the `Get`-family of functions. It has an additional `DocString` function for printing out a useful text-based documentation of the configuration options.
 1. It should help with self-documenting app configuration.
 1. It should be basically immutable. Once you've initialized your configuration, you can't change it. 
 1. It should fail early. Misconfigurations should result in the program crashing before starting it's real work.   
+
+## Quick Usage Summary
+- `gofig.InitOpt` is a struct used to define a particular configuration option.
+    - `gofig.InitOpt.IdPtr` is a pointer to your variable that will hold a `gofig.Id`. Ids are used to retrieve the value of a configuration option.
+- `gofig.Init` is a function that initializes a `gofig` an array of `gofig.InitOpt`s passed in.
+    - All of your `gofig.Id`s will be set to their computed values after initialization and will be ready to go.
+- `gofig.Get` is a function that retrieves the value of a configuration option given a `gofig.Id`.
+ 
 
 ## Demonstration
 Below is a quick demo of how to use the **gofig**.
 ```go
 func whatever() error {
-    // Declare
-    gf := gofig.Gofig{}
+    // --------------------------------
+    // Assume env vars are set as follows:
+    // export FOO=true
+    // export BAR=42
+    // export BAZ="I am a baz"
+    // --------------------------------
 
-    // Initialization
-    err := gf.Init(
-		gofig.InitOpt{
-			Name:        "FOO",
-			Description: "This is a foo. It is used for blah blah blah",
-			Type:        gofig.TypeBool,
-			Required:    true,
-			IdPtr:       &fooId,
-		},
-		gofig.InitOpt{
-			Name:        "BAR",
-			Description: "This is a bar. It is used for blah blah blah",
-			Type:        gofig.TypeInt,
-			Required:    true,
-			IdPtr:       &barId,
-		},
-		gofig.InitOpt{
-			Name:        "BAZ",
-			Description: "This is a baz. It is used for blah blah blah",
-			Type:        gofig.TypeString,
-			Required:    false,
-			Default:     "I am a default value",
-			IdPtr:       &bazId,
-		},
+    // Declare Ids
+    var fooId gofig.Id
+    var barId gofig.Id
+    var bazId gofig.Id
+
+
+    // Initialize gofig
+    gf, err := gofig.Init(
+	  gofig.InitOpt{
+	  	Name:        "FOO",
+	  	Description: "This is a foo. It is used for blah",
+	  	Type:        gofig.TypeBool,
+	  	Required:    true,
+	  	IdPtr:       &fooId,
+	  },
+	  gofig.InitOpt{
+	  	Name:        "BAR",
+	  	Description: "This is a bar. It is used for blah",
+	  	Type:        gofig.TypeInt,
+	  	Required:    true,
+	  	IdPtr:       &barId,
+	  },
+	  gofig.InitOpt{
+	  	Name:        "BAZ",
+	  	Description: "This is a baz. It is used for blah",
+	  	Type:        gofig.TypeString,
+	  	Required:    false,
+	  	Default:     "I am a default value",
+	  	IdPtr:       &bazId,
+	  },
 	)
     if err != nil {
         log.Fatalf("Failed to initialize configuration: %v", err)
     }
 
-    // Getting
-    foo, err := gf.Get(fooId)
+    // Get values
+    foo, err := gf.GetBool(fooId) // foo = true
     if err != nil {
         return err
     }
-    bar, err := gf.Get(barId)
+    bar, err := gf.GetInt(barId) // bar = 42
     if err != nil {
         return err
     }
-    baz, err := gf.Get(bazId)
+    baz, err := gf.GetString(bazId) // baz = "I am a baz"
     if err != nil {
         return err
     }
 } 
 ```
 
-In practice, you might choose to make your config global. In which case it might look like this:
-```go
-var gf gofig.Gofig
+In practice, you might choose to make your config global.
 
-func whatever() {
-    // Initialization
-    err := gf.Init(
-        gofig.InitOpt{
-            Name:        "FOO",
-            Description: "This is a foo. It is used for blah blah blah",
-            Type:        gofig.TypeBool,
-            Required:    true,
-            Default:     false,
-            IdPtr:       &fooId,
-        },
-        ...
-    )
-    if err != nil {
-        log.Fatalf("Failed to initialize configuration: %v", err)
-    }
-} 
 
-func idk() {
-    // Getting
-    foo, err := gf.Get(fooId).(bool)
-    if err != nil {
-        log.Fatalf("Failed to get foo: %v", err)
-    }
-    ...
-}
-```
+For additional examples, see the [example](example) and [test](test) directory. 
 
-For additional examples, see the [test](test) directory. This has a comprehensive set of test cases that can serve as an example. With that being said, there isn't much to demonstrate as the library is quite simple right now.
-
-Use gofig and you'll find adding configuration options to config-heavy apps was never this easy. Go figure.
 
 ## Future Features
 1. Support for complex validation rules of config values
-  - For example:
-    - if you have a config option that is supposed to be an email address, you can add a validation rule that checks if the value is in an email address format
-    - if one config option is dependent on another, it will cause an error
-    - if two config options are mutually exclusive, it will cause an error
+    - For example:
+      - if you have a config option that is supposed to be an email address, you can add a validation rule that checks if the value is in an email address format
+      - if one config option is dependent on another, it will cause an error
+      - if two config options are mutually exclusive, it will cause an error
 1. Support for configuration from flags
 1. Support for configuration from YAML files
+1. Support for comma-separated values and arrays
+    - Comma-separated for environment variables and command-line args
+    - Arrays for JSON/YAML files
+
+## FAQ
+1. Why are you using `gofig.Id` instead of just using the name of the configuration option?
+    - This is to prevent typos and usage of raw strings. Lots of raw strings means lots of find-and-replacing. Using `gofig.Id` will prevent this.
+    - This forces the user to declare a variable to be used as an id.
+1. Why have `Get` and `GetType` family of functions instead of just having one `Get` function that returns an `interface{}`/`any`?
+    - This is for convenience as you will likely have to convert the returned `any` value to the correct type anyway.

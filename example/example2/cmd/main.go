@@ -13,7 +13,7 @@ func sendAudit() {
 func doSomething() {
 	fmt.Println("Did something")
 
-	enableAudit, err := config.App.Get(config.EnableAuditGfId)
+	enableAudit, err := config.GF.Get(config.EnableAuditGfId)
 	if err != nil {
 		panic(err)
 	}
@@ -28,29 +28,34 @@ func setUpDbConn(dbHost, dbPort, dbUser, dbPassword, dbName string) {
 }
 
 func main() {
-	config.Load()
+	err := config.Load()
+	if err != nil {
+		panic(err)
+	}
 
-	dbHost, err := config.App.GetString(config.DatabaseHostGfId)
+	dbHostAny, err := config.GF.Get(config.DatabaseHostGfId)
+	dbHost := dbHostAny.(string)
 	if err != nil {
 		panic(err)
 	}
-	dbPort, err := config.App.GetString(config.DatabasePortGfId)
+	dbPort, err := config.GF.GetString(config.DatabasePortGfId)
 	if err != nil {
 		panic(err)
 	}
-	dbUser, err := config.App.GetString(config.DatabaseUserGfId)
+	dbUser, err := config.GF.GetString(config.DatabaseUserGfId)
 	if err != nil {
 		panic(err)
 	}
-	dbPassword, err := config.App.GetString(config.DatabasePasswordGfId)
+	dbPassword, err := config.GF.GetString(config.DatabasePasswordGfId)
 	if err != nil {
 		panic(err)
 	}
-	dbName, err := config.App.GetString(config.DatabaseNameGfId)
+	dbName, err := config.GF.GetString(config.DatabaseNameGfId)
 	if err != nil {
 		panic(err)
 	}
 
 	setUpDbConn(dbHost, dbPort, dbUser, dbPassword, dbName)
 	doSomething()
+
 }

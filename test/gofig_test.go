@@ -26,35 +26,33 @@ func TestInit(t *testing.T) {
 	os.Setenv("BAR", "10")
 	os.Setenv("BAZ", "hello")
 
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 	var barId gofig.Id
 	var bazId gofig.Id
 
-	err := gf.Init(
-		gofig.InitOpt{
+	gf, err := gofig.Init([]gofig.InitOpt{
+		{
 			Name:        "FOO",
 			Description: "This is a foo. It is used for blah blah blah",
 			Type:        gofig.TypeBool,
 			Required:    true,
 			IdPtr:       &fooId,
 		},
-		gofig.InitOpt{
+		{
 			Name:        "BAR",
 			Description: "This is a bar. It is used for blah blah blah",
 			Type:        gofig.TypeInt,
 			Required:    true,
 			IdPtr:       &barId,
 		},
-		gofig.InitOpt{
+		{
 			Name:        "BAZ",
 			Description: "This is a baz. It is used for blah blah blah",
 			Type:        gofig.TypeString,
 			Required:    true,
 			IdPtr:       &bazId,
 		},
-	)
+	})
 
 	if err != nil {
 		t.Error(ErrExpectedNoError)
@@ -81,67 +79,13 @@ func TestInit(t *testing.T) {
 
 }
 
-func TestGetFailsWhenNotInitialized(t *testing.T) {
-	gf := gofig.Gofig{}
-
-	var fooId gofig.Id
-
-	_, errActual := gf.Get(fooId)
-	if errActual == nil {
-		t.Error(ErrExpectedError)
-	}
-	if errActual != gofig.ErrNotInitialized {
-		t.Error(ErrErrorsDoNotMatch(gofig.ErrNotInitialized, errActual))
-	}
-}
-
-func TestInitFailsWhenCalledMoreThanOnce(t *testing.T) {
-	os.Setenv("FOO", "true")
-	os.Setenv("BAR", "false")
-
-	gf := gofig.Gofig{}
-
-	var fooId gofig.Id
-
-	_ = gf.Init( // not testing the error here
-		gofig.InitOpt{
-			Name:        "FOO",
-			Description: "This is a foo. It is used for blah blah blah",
-			Type:        gofig.TypeBool,
-			Required:    true,
-			IdPtr:       &fooId,
-		},
-	)
-
-	errActual := gf.Init(
-		gofig.InitOpt{
-			Name:        "FOO",
-			Description: "This is a foo. It is used for blah blah blah",
-			Type:        gofig.TypeBool,
-			Required:    true,
-			IdPtr:       &fooId,
-		},
-	)
-
-	if errActual == nil {
-		t.Error(ErrExpectedError)
-	}
-
-	errExpected := gofig.ErrAlreadyInitialized
-	if errActual != errExpected {
-		t.Error(ErrErrorsDoNotMatch(gofig.ErrAlreadyInitialized, errActual))
-	}
-}
-
 func TestInitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 	os.Setenv("FOO", "10")
 
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
-	errActual := gf.Init(
-		gofig.InitOpt{
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
 			Name:        "FOO",
 			Description: "This is a foo. It is used for blah blah blah",
 			Type:        gofig.TypeInt,
@@ -149,7 +93,7 @@ func TestInitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 			Default:     10,
 			IdPtr:       &fooId,
 		},
-	)
+	})
 
 	if errActual != nil {
 		t.Error(ErrExpectedNoError)
@@ -158,8 +102,6 @@ func TestInitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 }
 
 func TestInitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -171,9 +113,9 @@ func TestInitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
 		IdPtr:       &fooId,
 	}
 
-	errActual := gf.Init(
+	_, errActual := gofig.Init([]gofig.InitOpt{
 		badInitOpt,
-	)
+	})
 
 	errExpected := gofig.ErrDefaultValueIsWrongTypeWhenNotRequired(badInitOpt)
 	if errActual.Error() != errExpected.Error() {
@@ -182,8 +124,6 @@ func TestInitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
 }
 
 func TestInitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -195,9 +135,9 @@ func TestInitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
 		IdPtr:       &fooId,
 	}
 
-	errActual := gf.Init(
+	_, errActual := gofig.Init([]gofig.InitOpt{
 		badInitOpt,
-	)
+	})
 
 	errExpected := gofig.ErrDefaultValueIsWrongTypeWhenNotRequired(badInitOpt)
 	if errActual.Error() != errExpected.Error() {
@@ -206,8 +146,6 @@ func TestInitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
 }
 
 func TestInitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -219,9 +157,9 @@ func TestInitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
 		IdPtr:       &fooId,
 	}
 
-	errActual := gf.Init(
+	_, errActual := gofig.Init([]gofig.InitOpt{
 		badInitOpt,
-	)
+	})
 
 	errExpected := gofig.ErrDefaultValueIsWrongTypeWhenNotRequired(badInitOpt)
 	if errActual.Error() != errExpected.Error() {
@@ -230,8 +168,6 @@ func TestInitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
 }
 
 func TestInitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -243,9 +179,9 @@ func TestInitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
 		IdPtr:       &fooId,
 	}
 
-	errActual := gf.Init(
+	_, errActual := gofig.Init([]gofig.InitOpt{
 		badInitOpt,
-	)
+	})
 
 	errExpected := gofig.ErrDefaultValueIsWrongTypeWhenNotRequired(badInitOpt)
 	if errActual.Error() != errExpected.Error() {
@@ -257,19 +193,17 @@ func TestInitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
 	val := "not an int"
 	os.Setenv("FOO", val)
 
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
-	errActual := gf.Init(
-		gofig.InitOpt{
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
 			Name:        "FOO",
 			Description: "This is a foo. It is used for blah blah blah",
 			Type:        gofig.TypeInt,
 			Required:    true,
 			IdPtr:       &fooId,
 		},
-	)
+	})
 
 	if errActual == nil {
 		t.Error(ErrExpectedError)
@@ -290,19 +224,17 @@ func TestInitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
 	val := "not a float"
 	os.Setenv("FOO", val)
 
-	gf := gofig.Gofig{}
-
 	var fooId gofig.Id
 
-	errActual := gf.Init(
-		gofig.InitOpt{
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
 			Name:        "FOO",
 			Description: "This is a foo. It is used for blah blah blah",
 			Type:        gofig.TypeFloat,
 			Required:    true,
 			IdPtr:       &fooId,
 		},
-	)
+	})
 
 	if errActual == nil {
 		t.Error(ErrExpectedError)
@@ -320,9 +252,7 @@ func TestInitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
 }
 
 func TestInitFailsWhenNoInitOptsPassed(t *testing.T) {
-	gf := gofig.Gofig{}
-
-	errActual := gf.Init()
+	_, errActual := gofig.Init([]gofig.InitOpt{})
 
 	errExpected := gofig.ErrNoInputOpts
 	if errActual.Error() != errExpected.Error() {
@@ -334,8 +264,6 @@ func TestInitFailsWhenNoInitOptsPassed(t *testing.T) {
 Create a bunch of configuration Ids by calling Init with a bunch of correctly defined InitOpts with mixed types. Then test to see if all the values equal expected results.
 */
 func TestGetABunchOfCallsSuccess(t *testing.T) {
-	gf := gofig.Gofig{}
-
 	const n = 30
 	var ids [n]gofig.Id
 	var opts [n]gofig.InitOpt
@@ -348,7 +276,7 @@ func TestGetABunchOfCallsSuccess(t *testing.T) {
 		vals[i] = val
 	}
 
-	err := gf.Init(
+	gf, err := gofig.Init([]gofig.InitOpt{
 		opts[0],
 		opts[1],
 		opts[2],
@@ -379,7 +307,7 @@ func TestGetABunchOfCallsSuccess(t *testing.T) {
 		opts[27],
 		opts[28],
 		opts[29],
-	)
+	})
 
 	if err != nil {
 		t.Error(ErrExpectedNoError)

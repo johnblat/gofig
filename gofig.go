@@ -4,43 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 )
-
-/************************************************************
-	+--------------------------------------------------------+
-	|            What's the deal with Gofig?				 |
-	+--------------------------------------------------------+
-
-
-
-gofig is a config management library that is designed to have:
-1. Self-Documenting capabilities
-2. A very simple API
-3. Validation functionality for config values
-4. Almost immutable config values
-5. Ability to create multiple configuration sections for different parts of your application if needed
-
-1. Self-Documenting Capabilities
-gofig allows you to define all possible config options in one function-call. In theory, you could have one file that defines all possible config options for your application. This is useful for documentation purposes, as you can see all possible config options in one place. There's no need to update a readme file everytime you add a new config option - just tell the reader to check your go file where you initialize the config options.const
-
-2. A very simple API
-gofig contains only 2 functions:
-- Init
-- Get
-There's not much to learn about gofig.
-
-3. Validation functionality for config values
-gofig allows you to optionally add validation functions to your config options. This provides more self-documenting code which will tell the reader the required values, the possible values, and even conditonal validation. For example, is `ENV_VAR_A` is set to `TRUE`, then `ENV_VAR_1`, `ENV_VAR_2`, and `ENV_VAR_3` must be set to something.
-
-4. Almost immutable config values
-gofig allows you to only call `Init` once per Gofig instance. Once `Init` has been called, the values Gofig contains can't be changed.
-
-5. Ability to create multiple configuration sections for different parts of your application if needed
-gofig allows you to create multiple Gofig instances. This is useful if you have different parts of your application that require different config options, or you want to separate sections of your application
-*/
 
 const (
 	TypeBool   GfType = 0
@@ -49,8 +16,6 @@ const (
 	TypeString GfType = 3
 	numTypes   GfType = 4
 )
-
-type NoDefault struct{}
 
 var typeNames = []string{
 	"bool",
@@ -66,19 +31,19 @@ type Id struct {
 	valIdx int    // the index of the value in the slice of the corresponding GfType
 }
 
+/*
+valsByType has this structure:
+[
+
+	[]bool,
+	[]int,
+	[]float64,
+	[]string,
+
+]
+*/
 type Gofig struct {
-	sync.Mutex        // prevents someone from doing something like having two threads and calling Init at the same time on the same Gofig object
-	initialized bool  // prevents gofig from being initialized more than once. This attempts to make the config values read-only.
-	valsByType  []any // slice of slices corresponding to the different types the config options could be.
-	/*
-		valsByType has this structure:
-		[
-			[]bool,
-			[]int,
-			[]float64,
-			[]string,
-		]
-	*/
+	valsByType []any // slice of slices corresponding to the different types the config options could be.
 }
 
 type InitOpt struct {
@@ -98,7 +63,6 @@ type InitOpt struct {
 **********************
 */
 
-var ErrAlreadyInitialized = errors.New("Gofig object already initialized")
 var ErrNoInputOpts = errors.New("no initOpts provided. must provice initOpts to initialize a Gofig object")
 var ErrInvalidId = errors.New("invalid id")
 var ErrNotInitialized = errors.New("Gofig not initialized. Call Init() first")
@@ -130,12 +94,21 @@ var ErrWrongTypeSetInEnvironment = func(initOpt InitOpt, valFromEnviron string) 
 	+-----------------+
 ***********************/
 
-func lookupFromEnv(initOpt InitOpt) (string, error) {
-	valStr, exists := os.LookupEnv(initOpt.Name)
-	if !exists && initOpt.Required {
-		return "", ErrRequiredConfigNotSet(initOpt.Name)
+func isDefaultTypeCorrect(initOpt InitOpt) bool {
+	var GfTypeMapReflectionKind = map[GfType]reflect.Kind{
+		TypeBool:   reflect.Bool,
+		TypeInt:    reflect.Int,
+		TypeFloat:  reflect.Float64,
+		TypeString: reflect.String,
 	}
-	return valStr, nil
+
+	if !initOpt.Required {
+		defaultValKind := reflect.TypeOf(initOpt.Default).Kind()
+		if defaultValKind != GfTypeMapReflectionKind[initOpt.Type] {
+			return false
+		}
+	}
+	return true
 }
 
 /***********************
@@ -144,42 +117,56 @@ func lookupFromEnv(initOpt InitOpt) (string, error) {
 	+---------------+
 ***********************/
 
-func New(initOpts ...InitOpt) (*Gofig, error) {
-	gf := &Gofig{}
-	err := gf.Init(initOpts...)
-	if err != nil {
-		return nil, err
+/*
+DocString returns a string that contains the documentation for the config options passed in.
+*/
+func DocString(initOpts []InitOpt) (string, error) {
+	if len(initOpts) == 0 {
+		return "", ErrNoInputOpts
 	}
-	return gf, nil
+
+	var docs string
+
+	for _, initOpt := range initOpts {
+		docs += fmt.Sprintf(
+			"%s\n\tDescription: %s\n\tType: %s\n\tRequired: %v\n",
+			initOpt.Name,
+			initOpt.Description,
+			typeNames[initOpt.Type],
+			initOpt.Required,
+		)
+
+		if !initOpt.Required {
+			docs += fmt.Sprintf("\tDefault: %v\n", initOpt.Default)
+		}
+	}
+
+	return docs, nil
+
 }
 
 /*
 Init initializes the Gofig object with the config options passed in.
 If Gofig has already been initialized, Init will return an error.
 */
-func (gf *Gofig) Init(initOpts ...InitOpt) error {
+func Init(initOpts []InitOpt) (Gofig, error) {
+	gf := Gofig{}
+
 	var valsBool []bool
 	var valsInt []int
 	var valsFloat []float64
 	var valsString []string
 
-	gf.Lock() // don't allow multiple threads to alter the Gofig object at the same time
-	defer gf.Unlock()
-
-	if gf.initialized {
-		return ErrAlreadyInitialized
-	}
-
 	if len(initOpts) == 0 {
-		return ErrNoInputOpts
+		return gf, ErrNoInputOpts
 	}
 
 	for _, initOpt := range initOpts {
 		if initOpt.Required && initOpt.Default != nil {
-			return ErrDefaultNotNilWhenRequired(initOpt)
+			return gf, ErrDefaultNotNilWhenRequired(initOpt)
 		}
 		if !initOpt.Required && initOpt.Default == nil {
-			return ErrDefaultIsNilWhenNotRequired(initOpt)
+			return gf, ErrDefaultIsNilWhenNotRequired(initOpt)
 		}
 
 		initOpt.IdPtr.t = initOpt.Type
@@ -187,17 +174,18 @@ func (gf *Gofig) Init(initOpts ...InitOpt) error {
 		switch initOpt.Type {
 		case TypeBool:
 
+			if ok := isDefaultTypeCorrect(initOpt); !ok {
+				return gf, ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
+			}
+
 			var val bool
 			if !initOpt.Required {
-				if _, ok := initOpt.Default.(bool); !ok {
-					return ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
-				}
 				val = initOpt.Default.(bool)
 			}
 
-			valStr, err := lookupFromEnv(initOpt)
-			if err != nil {
-				return err
+			valStr, exists := os.LookupEnv(initOpt.Name)
+			if !exists && initOpt.Required {
+				return gf, ErrRequiredConfigNotSet(initOpt.Name)
 			}
 
 			valConv := strings.ToUpper(valStr) == "TRUE"
@@ -211,22 +199,23 @@ func (gf *Gofig) Init(initOpts ...InitOpt) error {
 
 		case TypeInt:
 
+			if ok := isDefaultTypeCorrect(initOpt); !ok {
+				return gf, ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
+			}
+
 			var val int
 			if !initOpt.Required {
-				if _, ok := initOpt.Default.(int); !ok {
-					return ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
-				}
 				val = initOpt.Default.(int)
 			}
 
-			valStr, err := lookupFromEnv(initOpt)
-			if err != nil {
-				return err
+			valStr, exists := os.LookupEnv(initOpt.Name)
+			if !exists && initOpt.Required {
+				return gf, ErrRequiredConfigNotSet(initOpt.Name)
 			}
 
 			valConv, err := strconv.Atoi(valStr)
 			if err != nil {
-				return ErrWrongTypeSetInEnvironment(initOpt, valStr)
+				return gf, ErrWrongTypeSetInEnvironment(initOpt, valStr)
 			}
 
 			if valConv != val {
@@ -238,22 +227,23 @@ func (gf *Gofig) Init(initOpts ...InitOpt) error {
 
 		case TypeFloat:
 
+			if ok := isDefaultTypeCorrect(initOpt); !ok {
+				return gf, ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
+			}
+
 			var val float64
 			if !initOpt.Required {
-				if _, ok := initOpt.Default.(float64); !ok {
-					return ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
-				}
 				val = initOpt.Default.(float64)
 			}
 
-			valStr, err := lookupFromEnv(initOpt)
-			if err != nil {
-				return err
+			valStr, exists := os.LookupEnv(initOpt.Name)
+			if !exists && initOpt.Required {
+				return gf, ErrRequiredConfigNotSet(initOpt.Name)
 			}
 
 			valConv, err := strconv.ParseFloat(valStr, 64)
 			if err != nil {
-				return ErrWrongTypeSetInEnvironment(initOpt, valStr)
+				return gf, ErrWrongTypeSetInEnvironment(initOpt, valStr)
 			}
 
 			if valConv != val {
@@ -265,17 +255,18 @@ func (gf *Gofig) Init(initOpts ...InitOpt) error {
 
 		case TypeString:
 
+			if ok := isDefaultTypeCorrect(initOpt); !ok {
+				return gf, ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
+			}
+
 			var val string
 			if !initOpt.Required {
-				if _, ok := initOpt.Default.(string); !ok {
-					return ErrDefaultValueIsWrongTypeWhenNotRequired(initOpt)
-				}
 				val = initOpt.Default.(string)
 			}
 
-			valStr, err := lookupFromEnv(initOpt)
-			if err != nil {
-				return err
+			valStr, exists := os.LookupEnv(initOpt.Name)
+			if !exists && initOpt.Required {
+				return gf, ErrRequiredConfigNotSet(initOpt.Name)
 			}
 
 			if valStr != val {
@@ -294,9 +285,7 @@ func (gf *Gofig) Init(initOpts ...InitOpt) error {
 		valsString,
 	}
 
-	gf.initialized = true
-
-	return nil
+	return gf, nil
 }
 
 /*
@@ -305,11 +294,6 @@ If the Id is invalid, Get will return an error.
 If Gofig has not been initialized, Get will return an error.
 */
 func (gf *Gofig) Get(id Id) (any, error) {
-
-	if !gf.initialized {
-		return 0, ErrNotInitialized
-	}
-
 	if id.t < 0 || id.t >= numTypes {
 		return nil, ErrInvalidId
 	}
