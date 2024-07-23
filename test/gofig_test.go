@@ -16,12 +16,13 @@ var ErrExpectedError = errors.New("expected an error")
 var ErrErrorsDoNotMatch = func(expected, actual error) error {
 	return fmt.Errorf("expected error: `%v`, got: `%v`", expected, actual)
 }
+var ErrNotImplemented = errors.New("not implemented")
 
 /*
-Test_Init is just a general example test to show usage of the library.
+Test_Init_ is just a general example test to show usage of the library.
 Does a few checks in one
 */
-func Test_Init(t *testing.T) {
+func Test_Init_General(t *testing.T) {
 	os.Setenv("FOO", "true")
 	os.Setenv("BAR", "10")
 	os.Setenv("BAZ", "hello")
@@ -79,7 +80,7 @@ func Test_Init(t *testing.T) {
 
 }
 
-func Test_InitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
+func Test_Init_ErrNil_WhenIntDefatultTypeCorrect(t *testing.T) {
 	os.Setenv("FOO", "10")
 
 	var fooId gofig.Id
@@ -101,7 +102,7 @@ func Test_InitErrIsNilWhenIntDefatultTypeCorrect(t *testing.T) {
 
 }
 
-func Test_InitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
+func Test_Init_Err_When_IntDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -123,7 +124,26 @@ func Test_InitFailsWhenIntDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
+func Test_Init_ErrNil_When_BoolDefaultTypeCorrect(t *testing.T) {
+	var fooId gofig.Id
+
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
+			Name:        "FOO",
+			Description: "This is a foo. It is used for blah blah blah",
+			Type:        gofig.TypeBool,
+			Required:    false,
+			Default:     true,
+			IdPtr:       &fooId,
+		},
+	})
+
+	if errActual != nil {
+		t.Error(ErrExpectedNoError)
+	}
+}
+
+func Test_Init_Err_When_BoolDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -145,7 +165,27 @@ func Test_InitFailsWhenBoolDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
+func Test_Init_ErrNil_WhenFloatDefaultTypeCorrect(t *testing.T) {
+	var fooId gofig.Id
+
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
+			Name:        "FOO",
+			Description: "This is a foo. It is used for blah blah blah",
+			Type:        gofig.TypeFloat,
+			Required:    false,
+			Default:     10.0,
+			IdPtr:       &fooId,
+		},
+	})
+
+	if errActual != nil {
+		t.Error(ErrExpectedNoError)
+	}
+
+}
+
+func Test_Init_Err_When_FloatDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -167,7 +207,26 @@ func Test_InitFailsWhenFloatDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
+func Test_Init_ErrNil_WhenStringDefaultTypeCorrect(t *testing.T) {
+	var fooId gofig.Id
+
+	_, errActual := gofig.Init([]gofig.InitOpt{
+		{
+			Name:        "FOO",
+			Description: "This is a foo. It is used for blah blah blah",
+			Type:        gofig.TypeString,
+			Required:    false,
+			Default:     "hello",
+			IdPtr:       &fooId,
+		},
+	})
+
+	if errActual != nil {
+		t.Error(ErrExpectedNoError)
+	}
+}
+
+func Test_Init_Err_When_StringDefaultTypeIncorrect(t *testing.T) {
 	var fooId gofig.Id
 
 	badInitOpt := gofig.InitOpt{
@@ -189,7 +248,7 @@ func Test_InitFailsWhenStringDefaultTypeIncorrect(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
+func Test_Init_Err_When_EnvVarCannotBeConvertedToInt(t *testing.T) {
 	val := "not an int"
 	os.Setenv("FOO", val)
 
@@ -220,7 +279,7 @@ func Test_InitFailsWhenEnvVarCannotBeConvertedToInt(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
+func Test_Init_Err_When_EnvVarCannotBeConvertedToFloat64(t *testing.T) {
 	val := "not a float"
 	os.Setenv("FOO", val)
 
@@ -251,7 +310,7 @@ func Test_InitFailsWhenEnvVarCannotBeConvertedToFloat64(t *testing.T) {
 	}
 }
 
-func Test_InitFailsWhenNoInitOptsPassed(t *testing.T) {
+func Test_Init_Err_When_NoInitOptsPassed(t *testing.T) {
 	_, errActual := gofig.Init([]gofig.InitOpt{})
 
 	errExpected := gofig.ErrNoInputOpts
