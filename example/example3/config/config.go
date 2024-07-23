@@ -8,6 +8,7 @@ import (
 
 var (
 	// Config is the configuration for the application
+	DatabaseEngineGfId       gofig.Id
 	DatabaseHostGfId         gofig.Id
 	DatabasePortGfId         gofig.Id
 	DatabaseUserGfId         gofig.Id
@@ -29,6 +30,13 @@ var GF gofig.Gofig
 func Load() error {
 	var err error
 	initOpts := []gofig.InitOpt{
+		{
+			Name:        "DATABASE_ENGINE",
+			Description: "The database engine. Can be one of: postgres, mysql, sqlite",
+			Type:        gofig.TypeString,
+			Required:    true,
+			IdPtr:       &DatabaseEngineGfId,
+		},
 		{
 			Name:        "DATABASE_HOST",
 			Description: "The database host",

@@ -27,6 +27,7 @@ var typeNames = []string{
 type GfType int
 
 type Id struct {
+	valid  bool
 	t      GfType // the GfType num will correspond to the index in the Gofig.valsByType slice
 	valIdx int    // the index of the value in the slice of the corresponding GfType
 }
@@ -43,7 +44,8 @@ valsByType has this structure:
 ]
 */
 type Gofig struct {
-	valsByType []any // slice of slices corresponding to the different types the config options could be.
+	initialized bool
+	valsByType  []any // slice of slices corresponding to the different types the config options could be.
 }
 
 type InitOpt struct {
@@ -109,6 +111,23 @@ func isDefaultTypeCorrect(initOpt InitOpt) bool {
 		}
 	}
 	return true
+}
+
+func validateCommonGetInputs(gfInitializd bool, id Id) error {
+	if !gfInitializd {
+		return ErrNotInitialized
+	}
+	if !id.valid {
+		return ErrInvalidId
+	}
+	if id.t < 0 || id.t >= numTypes {
+		return ErrInvalidId
+	}
+	if id.valIdx < 0 {
+		return ErrInvalidId
+	}
+
+	return nil
 }
 
 /***********************
@@ -285,6 +304,10 @@ func Init(initOpts []InitOpt) (Gofig, error) {
 		valsString,
 	}
 
+	for _, opt := range initOpts {
+		opt.IdPtr.valid = true
+	}
+	gf.initialized = true
 	return gf, nil
 }
 
@@ -294,10 +317,16 @@ If the Id is invalid, Get will return an error.
 If Gofig has not been initialized, Get will return an error.
 */
 func (gf *Gofig) Get(id Id) (any, error) {
+
+	if !gf.initialized {
+		return nil, ErrNotInitialized
+	}
+	if !id.valid {
+		return nil, ErrInvalidId
+	}
 	if id.t < 0 || id.t >= numTypes {
 		return nil, ErrInvalidId
 	}
-
 	if id.valIdx < 0 {
 		return nil, ErrInvalidId
 	}
@@ -339,11 +368,9 @@ func (gf *Gofig) Get(id Id) (any, error) {
 GetBool
 */
 func (gf *Gofig) GetBool(id Id) (bool, error) {
-	if id.t != TypeBool {
-		return false, ErrInvalidId
-	}
-	if id.valIdx < 0 {
-		return false, ErrInvalidId
+	err := validateCommonGetInputs(gf.initialized, id)
+	if err != nil {
+		return false, err
 	}
 	if id.valIdx >= len(gf.valsByType[id.t].([]bool)) {
 		return false, ErrInvalidId
@@ -352,11 +379,9 @@ func (gf *Gofig) GetBool(id Id) (bool, error) {
 }
 
 func (gf *Gofig) GetInt(id Id) (int, error) {
-	if id.t != TypeInt {
-		return 0, ErrInvalidId
-	}
-	if id.valIdx < 0 {
-		return 0, ErrInvalidId
+	err := validateCommonGetInputs(gf.initialized, id)
+	if err != nil {
+		return 0, err
 	}
 	if id.valIdx >= len(gf.valsByType[id.t].([]int)) {
 		return 0, ErrInvalidId
@@ -365,11 +390,9 @@ func (gf *Gofig) GetInt(id Id) (int, error) {
 }
 
 func (gf *Gofig) GetFloat(id Id) (float64, error) {
-	if id.t != TypeFloat {
-		return 0.0, ErrInvalidId
-	}
-	if id.valIdx < 0 {
-		return 0.0, ErrInvalidId
+	err := validateCommonGetInputs(gf.initialized, id)
+	if err != nil {
+		return 0, err
 	}
 	if id.valIdx >= len(gf.valsByType[id.t].([]float64)) {
 		return 0.0, ErrInvalidId
@@ -378,11 +401,9 @@ func (gf *Gofig) GetFloat(id Id) (float64, error) {
 }
 
 func (gf *Gofig) GetString(id Id) (string, error) {
-	if id.t != TypeString {
-		return "", ErrInvalidId
-	}
-	if id.valIdx < 0 {
-		return "", ErrInvalidId
+	err := validateCommonGetInputs(gf.initialized, id)
+	if err != nil {
+		return "", err
 	}
 	if id.valIdx >= len(gf.valsByType[id.t].([]string)) {
 		return "", ErrInvalidId
