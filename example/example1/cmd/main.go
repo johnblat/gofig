@@ -83,29 +83,6 @@ func main() {
 			Required:    true,
 			IdPtr:       &DatabaseNameGfId,
 		},
-		{
-			Name:        "ENABLE_AUDIT",
-			Description: "Enable audit logging",
-			Type:        gofig.TypeBool,
-			Required:    false,
-			Default:     false,
-			IdPtr:       &EnableAuditGfId,
-		},
-		{
-			Name:        "ENABLE_VERBOSE_LOGGING",
-			Description: "Enable verbose logging",
-			Type:        gofig.TypeBool,
-			Required:    false,
-			Default:     false,
-			IdPtr:       &EnableVerboseLoggingGfId,
-		},
-		{
-			Name:        "ENVIRONMENT",
-			Description: "The environment the application is running in",
-			Type:        gofig.TypeString,
-			Required:    true,
-			IdPtr:       &EnvironmentGfId,
-		},
 	})
 	if err != nil {
 		panic(err)
@@ -135,6 +112,8 @@ func main() {
 	whatever, err := gf.GetString(WhateverGfId)
 	if err != nil {
 		panic(err)
+	} else {
+		fmt.Printf("Whatever: %s\n", whatever)
 	}
 
 	setUpDbConn(dbHost, dbPort, dbUser, dbPassword, dbName)

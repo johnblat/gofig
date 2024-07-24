@@ -2,7 +2,7 @@
 
 ## What's the Deal With gofig?
 
-**gofig** is a **configuration library** for **config-heavy apps** written by lazy developers. It was created because:
+**gofig** is a **configuration library** for **config-heavy apps**. It was created because:
 - As projects grow, configuration options grow and change. **gofig** makes it really hard to **not** document configuration options accurately and comprehensively. 
 - **gofig** tries to prevent configuration related bugs by adding safeguards to fail early on config initialization.
 - Configuration options can be scattered around the codebase. **gofig** centralizes all configuration options in one place. This makes it easy to see all the configuration options at a glance.
@@ -10,14 +10,22 @@
 In **gofig**, the code *is* the documentation.
 
 ## Design Philosophies
-1. It should be easy to use. It basically only has two API functions: `Init` and the `Get`-family of functions. It has an additional `DocString` function for printing out a useful text-based documentation of the configuration options.
-1. It should help with self-documenting app configuration.
-1. It should be basically immutable. Once you've initialized your configuration, you can't change it. 
+1. It should help with self-documenting app configuration options.
+1. Config values should be basically immutable. Once you've initialized your configuration, you can't change it. 
 1. It should fail early. Misconfigurations should result in the program crashing before starting it's real work.   
 
 ## Quick Usage Summary
 - `gofig.InitOpt` is a struct used to define a particular configuration option.
-    - `gofig.InitOpt.IdPtr` is a pointer to your variable that will hold a `gofig.Id`. Ids are used to retrieve the value of a configuration option.
+    ```go
+    type InitOpt struct {
+        Name        string // The name of the config option (e.g. "ENV_VAR_A")
+        Description string // A description of the config option
+        Type        GfType // The type of the config option (e.g. TypeBool, TypeInt, TypeFloat, TypeString)
+        Required    bool   // Whether the config option is required
+        Default     any    // The default value of the config option. Doesn't do anything if the config option is required.
+        IdPtr       *Id    // Pointer to the Id of the config option. This is where you store the Id. The Id value be set after the call to Init.
+    }
+    ```
 - `gofig.Init` is a function that initializes a `gofig` an array of `gofig.InitOpt`s passed in.
     - All of your `gofig.Id`s will be set to their computed values after initialization and will be ready to go.
 - `gofig.Get` is a function that retrieves the value of a configuration option given a `gofig.Id`.
