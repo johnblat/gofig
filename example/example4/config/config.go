@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 var (
 	// Config is the configuration for the application
+	DatabaseEngineGfId       gofig.Id
 	DatabaseHostGfId         gofig.Id
 	DatabasePortGfId         gofig.Id
 	DatabaseUserGfId         gofig.Id
@@ -16,37 +17,26 @@ var (
 	EnableAuditGfId          gofig.Id
 	EnableVerboseLoggingGfId gofig.Id
 	EnvironmentGfId          gofig.Id
-	WhateverGfId             gofig.Id
 )
 
-func sendAudit() {
-	fmt.Println("Sent audit")
-}
+var GF gofig.Gofig
 
-func doSomething() {
-	fmt.Println("Did something")
+// Init
+// Get-family functions
 
-	enableAudit, err := gf.Get(EnableAuditGfId)
-	if err != nil {
-		panic(err)
-	}
+// auto-add to readme
+// lookup id based on name given
 
-	if enableAudit == true {
-		sendAudit()
-	}
-}
-
-func setUpDbConn(dbHost, dbPort, dbUser, dbPassword, dbName string) {
-	fmt.Printf("Connecting to %s:%s as %s. Set up Db Conn\n", dbHost, dbPort, dbUser)
-}
-
-var gf gofig.Gofig
-
-func main() {
-
-	// setup gofig
+func Load() error {
 	var err error
-	gf, err = gofig.Init([]gofig.InitOpt{
+	initOpts := []gofig.InitOpt{
+		{
+			Name:        "DATABASE_ENGINE",
+			Description: "The database engine. Can be one of: postgres, mysql, sqlite",
+			Type:        gofig.TypeString,
+			Required:    true,
+			IdPtr:       &DatabaseEngineGfId,
+		},
 		{
 			Name:        "DATABASE_HOST",
 			Description: "The database host",
@@ -106,38 +96,17 @@ func main() {
 			Required:    true,
 			IdPtr:       &EnvironmentGfId,
 		},
-	})
+	}
+	docStr, err := gofig.DocString(initOpts)
 	if err != nil {
-		panic(err)
+		return err
+	}
+	fmt.Println(docStr)
+
+	GF, err = gofig.Init(initOpts)
+	if err != nil {
+		return err
 	}
 
-	// actual stuff
-	dbHost, err := gf.GetString(DatabaseHostGfId)
-	if err != nil {
-		panic(err)
-	}
-	dbPort, err := gf.GetString(DatabasePortGfId)
-	if err != nil {
-		panic(err)
-	}
-	dbUser, err := gf.GetString(DatabaseUserGfId)
-	if err != nil {
-		panic(err)
-	}
-	dbPassword, err := gf.GetString(DatabasePasswordGfId)
-	if err != nil {
-		panic(err)
-	}
-	dbName, err := gf.GetString(DatabaseNameGfId)
-	if err != nil {
-		panic(err)
-	}
-	whatever, err := gf.GetString(WhateverGfId)
-	if err != nil {
-		panic(err)
-	}
-
-	setUpDbConn(dbHost, dbPort, dbUser, dbPassword, dbName)
-	doSomething()
-
+	return err
 }

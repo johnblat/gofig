@@ -45,7 +45,7 @@ valsByType has this structure:
 */
 type Gofig struct {
 	initialized bool
-	valsByType  []any // slice of slices corresponding to the different types the config options could be.
+	valsByType  [numTypes]any // slice of slices corresponding to the different types the config options could be.
 }
 
 type InitOpt struct {
@@ -297,12 +297,10 @@ func Init(initOpts []InitOpt) (Gofig, error) {
 		}
 	}
 
-	gf.valsByType = []any{
-		valsBool,
-		valsInt,
-		valsFloat,
-		valsString,
-	}
+	gf.valsByType[TypeBool] = valsBool
+	gf.valsByType[TypeInt] = valsInt
+	gf.valsByType[TypeFloat] = valsFloat
+	gf.valsByType[TypeString] = valsString
 
 	for _, opt := range initOpts {
 		opt.IdPtr.valid = true
@@ -364,9 +362,6 @@ func (gf *Gofig) Get(id Id) (any, error) {
 
 // More Get-family functions for bool, int, float64, and string
 
-/*
-GetBool
-*/
 func (gf *Gofig) GetBool(id Id) (bool, error) {
 	err := validateCommonGetInputs(gf.initialized, id)
 	if err != nil {
