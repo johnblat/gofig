@@ -15,7 +15,7 @@ In **gofig**, the code *is* the documentation.
 1. It should fail early. Misconfigurations should result in the program crashing before starting it's real work.   
 
 ## Quick Usage Summary
-- `gofig.Init` is a function that initializes a `gofig` an array of `gofig.InitOpt`s passed in. `gofig.Init` will assign a unique `gofig.Id` to each `gofig.InitOpt` passed in. This `gofig.Id` will be used to retrieve the value of the configuration option. 
+- `gofig.Init` is a function that initializes a `gofig` object from an array of `gofig.InitOpt`s passed in. `gofig.Init` will assign a unique `gofig.Id` to each `gofig.InitOpt` passed in. This `gofig.Id` will be used to retrieve the value of the configuration option. 
     ```go
     func Init(opts ...InitOpt) (*Gofig, error)
     ```
