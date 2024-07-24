@@ -6,13 +6,10 @@
 - As projects grow, configuration options grow and change. **gofig** makes it really hard to **not** document configuration options accurately and comprehensively. 
 - **gofig** tries to prevent configuration related bugs by adding safeguards to fail early on config initialization.
 - Configuration options can be scattered around the codebase. **gofig** centralizes all configuration options in one place. This makes it easy to see all the configuration options at a glance.
+- Config values should be basically immutable. Once you've initialized your configuration, you can't change it. 
 
 In **gofig**, the code *is* the documentation.
 
-## Goals
-1. It should help with self-documenting app configuration options.
-1. Config values should be basically immutable. Once you've initialized your configuration, you can't change it. 
-1. It should fail early. Misconfigurations should result in the program crashing before starting it's real work.   
 
 ## Quick Usage Summary
 - `gofig.Init` is a function that initializes a `gofig` object from an array of `gofig.InitOpt`s passed in. `gofig.Init` will assign a unique `gofig.Id` to each `gofig.InitOpt` passed in. This `gofig.Id` will be used to retrieve the value of the configuration option. 
