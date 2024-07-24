@@ -2,7 +2,7 @@
 
 ## What's the Deal With gofig?
 
-**gofig** is a **configuration library** for **config-heavy apps**. It was created because:
+**gofig** is a self-documenting **configuration library** for **config-heavy apps**. It was created because:
 - As projects grow, configuration options grow and change. **gofig** makes it really hard to **not** document configuration options accurately and comprehensively. 
 - **gofig** tries to prevent configuration related bugs by adding safeguards to fail early on config initialization.
 - Configuration options can be scattered around the codebase. **gofig** centralizes all configuration options in one place. This makes it easy to see all the configuration options at a glance.
