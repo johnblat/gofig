@@ -9,7 +9,7 @@
 
 In **gofig**, the code *is* the documentation.
 
-## Design Philosophies
+## Goals
 1. It should help with self-documenting app configuration options.
 1. Config values should be basically immutable. Once you've initialized your configuration, you can't change it. 
 1. It should fail early. Misconfigurations should result in the program crashing before starting it's real work.   
